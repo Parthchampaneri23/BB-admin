@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "BusinessBulletin Admin | Editorial & Content Management",
   description: "Official Content Management System for BusinessBulletin Daily",
   icons: {
-    icon: "/updatedlogo.svg",
+    icon: "/favicon.ico",
   },
 };
 
