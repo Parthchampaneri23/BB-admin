@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     const recentNews = await News.find()
-      .sort({ createdAt: -1 })
+      .sort({ pubDate: -1, createdAt: -1 })
       .limit(6)
       .select('title category categoryLabel status pubDate views createdAt');
 
