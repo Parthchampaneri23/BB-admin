@@ -280,7 +280,7 @@ export default function EditNewsPage({
       return;
     }
     if (!fullText.trim()) {
-      setError('Full Article body cannot be empty.');
+      setError('Long  Descriptioncannot be empty.');
       return;
     }
 
@@ -583,22 +583,20 @@ export default function EditNewsPage({
               <button
                 type="button"
                 onClick={() => setImageInputMode('upload')}
-                className={`flex-1 py-1.5 font-semibold transition ${
-                  imageInputMode === 'upload'
+                className={`flex-1 py-1.5 font-semibold transition ${imageInputMode === 'upload'
                     ? 'bg-[#01142e] text-white'
                     : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 Upload File
               </button>
               <button
                 type="button"
                 onClick={() => setImageInputMode('download')}
-                className={`flex-1 py-1.5 font-semibold transition ${
-                  imageInputMode === 'download'
+                className={`flex-1 py-1.5 font-semibold transition ${imageInputMode === 'download'
                     ? 'bg-[#01142e] text-white'
                     : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 Download From URL
               </button>

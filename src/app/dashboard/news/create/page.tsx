@@ -236,7 +236,7 @@ export default function CreateNewsPage() {
       return;
     }
     if (!fullText.trim()) {
-      setError('Full Article body content is required.');
+      setError('Long  Descriptioncontent is required.');
       return;
     }
     if (!category.trim()) {
@@ -360,7 +360,7 @@ export default function CreateNewsPage() {
           {/* Summary / Lead */}
           <div className="bg-white p-5 rounded-xl border border-gray-200/90 shadow-xs space-y-2">
             <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
-              Summary / Excerpt <span className="text-red-500">*</span>
+              Short Description <span className="text-red-500">*</span>
             </label>
             <textarea
               value={summary}
@@ -375,7 +375,7 @@ export default function CreateNewsPage() {
           {/* Full Text / Article Body */}
           <div className="bg-white p-5 rounded-xl border border-gray-200/90 shadow-xs space-y-2">
             <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
-              Full Article Body <span className="text-red-500">*</span>
+              Long  Description<span className="text-red-500">*</span>
             </label>
             <textarea
               value={fullText}
@@ -554,22 +554,20 @@ export default function CreateNewsPage() {
               <button
                 type="button"
                 onClick={() => setImageInputMode('upload')}
-                className={`flex-1 py-1.5 font-semibold transition ${
-                  imageInputMode === 'upload'
-                    ? 'bg-[#01142e] text-white'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                }`}
+                className={`flex-1 py-1.5 font-semibold transition ${imageInputMode === 'upload'
+                  ? 'bg-[#01142e] text-white'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  }`}
               >
                 Upload File
               </button>
               <button
                 type="button"
                 onClick={() => setImageInputMode('download')}
-                className={`flex-1 py-1.5 font-semibold transition ${
-                  imageInputMode === 'download'
-                    ? 'bg-[#01142e] text-white'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                }`}
+                className={`flex-1 py-1.5 font-semibold transition ${imageInputMode === 'download'
+                  ? 'bg-[#01142e] text-white'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  }`}
               >
                 Download From URL
               </button>
