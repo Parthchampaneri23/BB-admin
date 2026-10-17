@@ -115,7 +115,10 @@ export async function POST(request: NextRequest) {
     const force = url.searchParams.get('force') === 'true';
 
     if (newsCount === 0 || force) {
-      const articlesToSeed = rawArticles as any[]; // Seed ALL articles from website
+      if (force) {
+        await News.deleteMany({});
+      }
+      const articlesToSeed = rawArticles as any[]; // Exactly 8 articles per section (80 total)
       for (const item of articlesToSeed) {
         let localImg = item.imageUrl;
         try {
