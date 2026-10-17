@@ -56,6 +56,12 @@ export async function PUT(
       isTrending,
       isFeatured,
       pubDate,
+      // SEO Fields
+      metaTitle,
+      metaDescription,
+      metaKeywords,
+      canonicalUrl,
+      schemaMarkup,
     } = body;
 
     // Field Validations
@@ -87,6 +93,13 @@ export async function PUT(
     if (isTrending !== undefined) article.isTrending = Boolean(isTrending);
     if (isFeatured !== undefined) article.isFeatured = Boolean(isFeatured);
     if (pubDate) article.pubDate = new Date(pubDate);
+
+    // Update SEO fields
+    if (metaTitle !== undefined) article.metaTitle = metaTitle.trim();
+    if (metaDescription !== undefined) article.metaDescription = metaDescription.trim();
+    if (metaKeywords !== undefined) article.metaKeywords = metaKeywords.trim();
+    if (canonicalUrl !== undefined) article.canonicalUrl = canonicalUrl.trim();
+    if (schemaMarkup !== undefined) article.schemaMarkup = schemaMarkup;
 
     // If new image supplied and not already local upload
     if (imageUrl && imageUrl !== article.imageUrl) {

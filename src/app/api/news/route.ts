@@ -84,6 +84,12 @@ export async function POST(request: NextRequest) {
       isTrending,
       isFeatured,
       pubDate,
+      // SEO Fields
+      metaTitle,
+      metaDescription,
+      metaKeywords,
+      canonicalUrl,
+      schemaMarkup,
     } = body;
 
     // Field Validations
@@ -121,6 +127,35 @@ export async function POST(request: NextRequest) {
       console.warn('Image download warning:', err);
     }
 
+    // Auto generate fallback SEO fields if empty
+    const finalMetaTitle = metaTitle && metaTitle.trim() ? metaTitle.trim() : `${title.trim()} | BusinessBulletin`;
+    const finalMetaDescription = metaDescription && metaDescription.trim() ? metaDescription.trim() : summary.trim().slice(0, 160);
+    const finalCanonicalUrl = canonicalUrl && canonicalUrl.trim() ? canonicalUrl.trim() : `https://businessbulletin.com/article/${slug}`;
+
+    let finalSchemaMarkup = schemaMarkup;
+    if (!finalSchemaMarkup || !finalSchemaMarkup.trim()) {
+      finalSchemaMarkup = JSON.stringify(
+        {
+          '@context': 'https://schema.org',
+          '@type': 'NewsArticle',
+          'headline': title.trim(),
+          'description': summary.trim(),
+          'image': [downloadedImageUrl],
+          'datePublished': pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+          'author': [{ '@type': 'Person', 'name': author || 'BusinessBulletin Desk' }],
+          'publisher': {
+            '@type': 'Organization',
+            'name': 'BusinessBulletin',
+            'logo': { '@type': 'ImageObject', 'url': 'https://businessbulletin.com/updatedlogo.svg' },
+          },
+          'mainEntityOfPage': { '@type': 'WebPage', '@id': finalCanonicalUrl },
+          'articleSection': categoryLabel || category,
+        },
+        null,
+        2
+      );
+    }
+
     const newArticle = await News.create({
       title: title.trim(),
       slug,
@@ -139,6 +174,12 @@ export async function POST(request: NextRequest) {
       isTrending: Boolean(isTrending),
       isFeatured: Boolean(isFeatured),
       pubDate: pubDate ? new Date(pubDate) : new Date(),
+      // SEO Fields
+      metaTitle: finalMetaTitle,
+      metaDescription: finalMetaDescription,
+      metaKeywords: metaKeywords ? metaKeywords.trim() : '',
+      canonicalUrl: finalCanonicalUrl,
+      schemaMarkup: finalSchemaMarkup,
     });
 
     return NextResponse.json({ success: true, article: newArticle }, { status: 201 });

@@ -9,6 +9,9 @@ import {
   Link as LinkIcon,
   CheckCircle,
   AlertCircle,
+  Globe,
+  Code2,
+  Sparkles,
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -37,6 +40,7 @@ export default function EditNewsPage({
 
   // Form fields
   const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
   const [summary, setSummary] = useState('');
   const [fullText, setFullText] = useState('');
   const [category, setCategory] = useState('');
@@ -51,6 +55,13 @@ export default function EditNewsPage({
   const [isTrending, setIsTrending] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
 
+  // SEO Fields
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [metaKeywords, setMetaKeywords] = useState('');
+  const [canonicalUrl, setCanonicalUrl] = useState('');
+  const [schemaMarkup, setSchemaMarkup] = useState('');
+
   // Categories & SubCategories
   const [categories, setCategories] = useState<Category[]>([]);
   const [availableSubCats, setAvailableSubCats] = useState<SubCategory[]>([]);
@@ -64,6 +75,62 @@ export default function EditNewsPage({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Auto generate SEO and Schema
+  const handleAutoGenerateSEO = () => {
+    if (!title.trim()) {
+      setError('Article title cannot be empty.');
+      return;
+    }
+    const cleanSlug = slug || title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+    const generatedMetaTitle = `${title.trim()} | BusinessBulletin`;
+    const generatedMetaDesc = summary ? summary.slice(0, 155) : title.slice(0, 155);
+    const generatedCanonical = `https://businessbulletin.com/article/${cleanSlug}`;
+
+    const keywordsList = [
+      categoryLabel || 'business news',
+      subCategoryLabel || '',
+      'stock market',
+      'economy',
+      'india financial news',
+      title.split(' ').slice(0, 4).join(' '),
+    ].filter(Boolean).join(', ');
+
+    const sampleSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'NewsArticle',
+      'headline': title.trim(),
+      'description': summary.trim(),
+      'image': [imageUrl || 'https://businessbulletin.com/updatedlogo.svg'],
+      'datePublished': new Date().toISOString(),
+      'author': [
+        {
+          '@type': 'Person',
+          'name': author || 'BusinessBulletin Desk',
+        },
+      ],
+      'publisher': {
+        '@type': 'Organization',
+        'name': 'BusinessBulletin',
+        'logo': {
+          '@type': 'ImageObject',
+          'url': 'https://businessbulletin.com/updatedlogo.svg',
+        },
+      },
+      'mainEntityOfPage': {
+        '@type': 'WebPage',
+        '@id': generatedCanonical,
+      },
+      'articleSection': categoryLabel || 'Markets',
+    };
+
+    setMetaTitle(generatedMetaTitle);
+    setMetaDescription(generatedMetaDesc);
+    setMetaKeywords(keywordsList);
+    setCanonicalUrl(generatedCanonical);
+    setSchemaMarkup(JSON.stringify(sampleSchema, null, 2));
+    setSuccess('SEO Meta tags and JSON-LD Schema markup updated!');
+  };
 
   // 1. Fetch Categories & Article
   useEffect(() => {
@@ -85,6 +152,7 @@ export default function EditNewsPage({
         if (newsData.success && newsData.article) {
           const a = newsData.article;
           setTitle(a.title || '');
+          setSlug(a.slug || '');
           setSummary(a.summary || '');
           setFullText(a.fullText || '');
           setCategory(a.category || '');
@@ -99,7 +167,13 @@ export default function EditNewsPage({
           setIsTrending(Boolean(a.isTrending));
           setIsFeatured(Boolean(a.isFeatured));
 
-          // Set available subcategories
+          // SEO Fields
+          setMetaTitle(a.metaTitle || `${a.title} | BusinessBulletin`);
+          setMetaDescription(a.metaDescription || (a.summary ? a.summary.slice(0, 155) : ''));
+          setMetaKeywords(a.metaKeywords || '');
+          setCanonicalUrl(a.canonicalUrl || `https://businessbulletin.com/article/${a.slug}`);
+          setSchemaMarkup(a.schemaMarkup || '');
+
           const matchedCat = catData.categories?.find((c: any) => c.slug === a.category);
           if (matchedCat) {
             setAvailableSubCats(matchedCat.subCategories || []);
@@ -231,6 +305,12 @@ export default function EditNewsPage({
           status,
           isTrending,
           isFeatured,
+          // SEO
+          metaTitle,
+          metaDescription,
+          metaKeywords,
+          canonicalUrl,
+          schemaMarkup,
         }),
       });
 
@@ -265,10 +345,10 @@ export default function EditNewsPage({
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-[#01142e] tracking-tight">
-              Edit News Article
+              Edit Article & SEO Settings
             </h1>
             <p className="text-xs text-gray-500">
-              Update article content, reassign category/sub-category, or update media.
+              Update article content, taxonomy, search metadata, and schema.org markup.
             </p>
           </div>
         </div>
@@ -300,7 +380,7 @@ export default function EditNewsPage({
 
       {/* Form Grid */}
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-5 rounded-xl border border-gray-200/90 shadow-xs space-y-2">
             <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
               Headline <span className="text-red-500">*</span>
@@ -338,6 +418,117 @@ export default function EditNewsPage({
               rows={12}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm leading-relaxed text-gray-800 focus:ring-2 focus:ring-[#0069f7] focus:outline-none font-sans"
             />
+          </div>
+
+          {/* SEO & Structured Data Module */}
+          <div className="bg-white p-6 rounded-xl border border-[#0069f7]/20 shadow-xs space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-[#0069f7]" />
+                <div>
+                  <h3 className="text-sm font-bold text-[#01142e]">
+                    SEO Meta & Structured Schema Markup
+                  </h3>
+                  <p className="text-[11px] text-gray-500">
+                    Search engine rankings, OpenGraph previews & Schema.org JSON-LD
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAutoGenerateSEO}
+                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0069f7] rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Auto Generate SEO
+              </button>
+            </div>
+
+            {/* SEO Meta Title */}
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                  SEO Meta Title
+                </label>
+                <span className="text-[10px] text-gray-400">
+                  {metaTitle.length} / 60 characters
+                </span>
+              </div>
+              <input
+                type="text"
+                value={metaTitle}
+                onChange={(e) => setMetaTitle(e.target.value)}
+                placeholder="Custom title tag for Google and search engines"
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-[#0069f7] focus:outline-none"
+              />
+            </div>
+
+            {/* SEO Meta Description */}
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                  SEO Meta Description
+                </label>
+                <span className="text-[10px] text-gray-400">
+                  {metaDescription.length} / 160 characters
+                </span>
+              </div>
+              <textarea
+                value={metaDescription}
+                onChange={(e) => setMetaDescription(e.target.value)}
+                rows={2}
+                placeholder="High-converting search snippet preview for SERPs"
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-[#0069f7] focus:outline-none"
+              />
+            </div>
+
+            {/* SEO Meta Keywords & Canonical */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Meta Keywords
+                </label>
+                <input
+                  type="text"
+                  value={metaKeywords}
+                  onChange={(e) => setMetaKeywords(e.target.value)}
+                  placeholder="stocks, economy, nifty, q2 results"
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-[#0069f7] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Canonical Link
+                </label>
+                <input
+                  type="url"
+                  value={canonicalUrl}
+                  onChange={(e) => setCanonicalUrl(e.target.value)}
+                  placeholder="https://businessbulletin.com/article/..."
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-xs text-gray-900 focus:ring-2 focus:ring-[#0069f7] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* JSON-LD Schema Markup */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-700">
+                  <Code2 className="w-3.5 h-3.5 text-[#0069f7]" />
+                  Schema.org NewsArticle JSON-LD
+                </label>
+                <span className="text-[10px] text-gray-400 font-mono">Structured Data</span>
+              </div>
+              <textarea
+                value={schemaMarkup}
+                onChange={(e) => setSchemaMarkup(e.target.value)}
+                rows={6}
+                placeholder="JSON-LD structured schema object"
+                className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-xs font-mono bg-gray-50 text-gray-800 focus:bg-white focus:ring-2 focus:ring-[#0069f7] focus:outline-none"
+              />
+            </div>
           </div>
         </div>
 

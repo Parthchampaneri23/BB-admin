@@ -19,6 +19,14 @@ export interface INews extends Document {
   isFeatured: boolean;
   views: number;
   pubDate: Date;
+
+  // SEO Fields
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
+  canonicalUrl?: string;
+  schemaMarkup?: string; // JSON-LD Structured Data Schema
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +51,13 @@ const NewsSchema = new Schema<INews>(
     isFeatured: { type: Boolean, default: false },
     views: { type: Number, default: 0 },
     pubDate: { type: Date, default: Date.now },
+
+    // SEO Fields
+    metaTitle: { type: String, default: '', trim: true },
+    metaDescription: { type: String, default: '', trim: true },
+    metaKeywords: { type: String, default: '', trim: true },
+    canonicalUrl: { type: String, default: '', trim: true },
+    schemaMarkup: { type: String, default: '' },
   },
   { timestamps: true }
 );
