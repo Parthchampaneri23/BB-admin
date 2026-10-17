@@ -72,42 +72,36 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Top Banner / Welcome */}
-      <div className="bg-gradient-to-r from-[#01142e] via-[#042452] to-[#073674] rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-xs font-medium text-blue-200 mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              Live Editorial Control Panel
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              BusinessBulletin Editorial Overview
-            </h1>
-            <p className="text-sm text-blue-100/80 mt-1 max-w-2xl leading-relaxed">
-              Manage dynamic categories, sub-categories, market reports, and daily financial news articles. All media assets are stored locally in the secure uploads pipeline.
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-200">
+        <div>
+          <h1 className="text-2xl font-bold text-[#01142e] tracking-tight">
+            Editorial Dashboard
+          </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Real-time platform overview, article dispatches, and category breakdown.
+          </p>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/dashboard/news/create"
-              className="inline-flex items-center gap-2 bg-[#0069f7] hover:bg-[#0058d0] text-white px-4 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition shadow-md"
-            >
-              <PlusCircle className="w-4 h-4" />
-              Write New Article
-            </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/news/create"
+            className="inline-flex items-center gap-2 bg-[#0069f7] hover:bg-[#0058d0] text-white px-4 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition shadow-md"
+          >
+            <PlusCircle className="w-4 h-4" />
+            Write Article
+          </Link>
 
-            <button
-              onClick={handleSeedData}
-              disabled={seeding}
-              className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-4 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition cursor-pointer disabled:opacity-50"
-              title="Populate database with live data from BB-website"
-            >
-              <Database className="w-4 h-4 text-cyan-300" />
-              {seeding ? 'Syncing...' : 'Sync / Seed Live Data'}
-            </button>
-          </div>
+          <button
+            onClick={handleSeedData}
+            disabled={seeding}
+            className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition cursor-pointer disabled:opacity-50"
+            title="Populate database with live data from BB-website"
+          >
+            <Database className="w-4 h-4 text-[#0069f7]" />
+            {seeding ? 'Syncing...' : 'Sync Live Data'}
+          </button>
         </div>
       </div>
 
