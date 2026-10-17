@@ -115,14 +115,32 @@ export async function POST(request: NextRequest) {
     const force = url.searchParams.get('force') === 'true';
 
     if (newsCount === 0 || force) {
-      const articlesToSeed = (rawArticles as any[]).slice(0, 30); // Seed top 30 representative articles
+      const articlesToSeed = rawArticles as any[]; // Seed ALL articles from website
       for (const item of articlesToSeed) {
         let localImg = item.imageUrl;
         try {
           localImg = await downloadImageToUploads(item.imageUrl);
-        } catch (err) {
-          console.warn('Could not download image during seed:', item.imageUrl, err);
+        } catch {
+          localImg = item.imageUrl;
         }
+
+        const generatedCanonical = `https://businessbulletin.com/article/${item.id}`;
+        const schema = {
+          '@context': 'https://schema.org',
+          '@type': 'NewsArticle',
+          'headline': item.title,
+          'description': item.summary,
+          'image': [localImg],
+          'datePublished': item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString(),
+          'author': [{ '@type': 'Person', 'name': item.author || 'BusinessBulletin Desk' }],
+          'publisher': {
+            '@type': 'Organization',
+            'name': 'BusinessBulletin',
+            'logo': { '@type': 'ImageObject', 'url': 'https://businessbulletin.com/updatedlogo.svg' },
+          },
+          'mainEntityOfPage': { '@type': 'WebPage', '@id': generatedCanonical },
+          'articleSection': item.categoryLabel || item.category,
+        };
 
         await News.findOneAndUpdate(
           { slug: item.id },
@@ -144,6 +162,11 @@ export async function POST(request: NextRequest) {
             isTrending: true,
             isFeatured: false,
             pubDate: item.pubDate ? new Date(item.pubDate) : new Date(),
+            metaTitle: `${item.title} | BusinessBulletin`,
+            metaDescription: item.summary ? item.summary.slice(0, 160) : '',
+            metaKeywords: `${item.categoryLabel || item.category}, financial news, business bulletin, stocks`,
+            canonicalUrl: generatedCanonical,
+            schemaMarkup: JSON.stringify(schema, null, 2),
           },
           { upsert: true, new: true }
         );

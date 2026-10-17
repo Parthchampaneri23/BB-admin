@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const search = searchParams.get('search');
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const limitParam = searchParams.get('limit');
+    const limit = limitParam === '0' || limitParam === 'all' ? 0 : parseInt(limitParam || '20', 10);
 
     const query: any = {};
 
@@ -37,19 +38,22 @@ export async function GET(request: NextRequest) {
     }
 
     const total = await News.countDocuments(query);
-    const news = await News.find(query)
-      .sort({ pubDate: -1, createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const queryBuilder = News.find(query).sort({ pubDate: -1, createdAt: -1 });
+
+    if (limit > 0) {
+      queryBuilder.skip((page - 1) * limit).limit(limit);
+    }
+
+    const news = await queryBuilder;
 
     return NextResponse.json({
       success: true,
       news,
       pagination: {
         total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
+        page: limit > 0 ? page : 1,
+        limit: limit > 0 ? limit : total,
+        pages: limit > 0 ? Math.ceil(total / limit) : 1,
       },
     });
   } catch (error) {
