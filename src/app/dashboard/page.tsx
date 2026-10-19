@@ -111,7 +111,7 @@ export default function DashboardPage() {
             <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Total Articles</p>
             <h3 className="text-2xl font-black text-[#01142e] mt-1">{stats?.totalNews || 0}</h3>
             <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-0.5">
-              <CheckCircle2 className="w-3 h-3" /> In database
+              <CheckCircle2 className="w-3 h-3" /> Available
             </span>
           </div>
           <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#0069f7] flex items-center justify-center">
@@ -202,11 +202,10 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            item.status === 'published'
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${item.status === 'published'
                               ? 'bg-emerald-50 text-emerald-700'
                               : 'bg-amber-50 text-amber-700'
-                          }`}
+                            }`}
                         >
                           {item.status}
                         </span>
