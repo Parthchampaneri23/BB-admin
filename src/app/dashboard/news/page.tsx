@@ -31,6 +31,8 @@ interface NewsItem {
   readTime: string;
   status: 'published' | 'draft' | 'archived';
   isTrending: boolean;
+  isFeatured?: boolean;
+  isBreaking?: boolean;
   pubDate: string;
   createdAt: string;
 }
@@ -250,7 +252,25 @@ export default function NewsListPage() {
                         >
                           {item.title}
                         </Link>
-                        <span className="text-[10px] text-gray-400">{item.readTime}</span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-gray-400">{item.readTime}</span>
+                          {item.isBreaking && (
+                            <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-red-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                              Breaking
+                            </span>
+                          )}
+                          {item.isFeatured && (
+                            <span className="bg-blue-100 text-[#0069f7] text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-blue-200">
+                              Featured
+                            </span>
+                          )}
+                          {item.isTrending && (
+                            <span className="bg-amber-100 text-amber-800 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-amber-200">
+                              Trending
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
 

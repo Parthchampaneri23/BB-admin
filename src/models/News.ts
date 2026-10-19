@@ -17,6 +17,7 @@ export interface INews extends Document {
   status: 'draft' | 'published' | 'archived';
   isTrending: boolean;
   isFeatured: boolean;
+  isBreaking?: boolean;
   views: number;
   pubDate: Date;
 
@@ -49,6 +50,7 @@ const NewsSchema = new Schema<INews>(
     status: { type: String, enum: ['draft', 'published', 'archived'], default: 'published' },
     isTrending: { type: Boolean, default: false },
     isFeatured: { type: Boolean, default: false },
+    isBreaking: { type: Boolean, default: false },
     views: { type: Number, default: 0 },
     pubDate: { type: Date, default: Date.now },
 
@@ -61,6 +63,10 @@ const NewsSchema = new Schema<INews>(
   },
   { timestamps: true }
 );
+
+if (process.env.NODE_ENV !== 'production') {
+  delete mongoose.models.News;
+}
 
 export const News: Model<INews> =
   mongoose.models.News || mongoose.model<INews>('News', NewsSchema);

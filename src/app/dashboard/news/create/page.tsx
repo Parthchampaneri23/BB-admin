@@ -56,6 +56,7 @@ export default function CreateNewsPage() {
   const [status, setStatus] = useState<'published' | 'draft' | 'archived'>('published');
   const [isTrending, setIsTrending] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isBreaking, setIsBreaking] = useState(false);
 
   // SEO Fields
   const [metaTitle, setMetaTitle] = useState('');
@@ -466,6 +467,7 @@ export default function CreateNewsPage() {
           status,
           isTrending,
           isFeatured,
+          isBreaking,
           // SEO
           metaTitle,
           metaDescription,
@@ -1049,26 +1051,41 @@ export default function CreateNewsPage() {
               </select>
             </div>
 
-            <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
-              <label className="text-xs font-semibold text-gray-700 flex items-center gap-2 cursor-pointer">
+            <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
+              <label className="text-xs font-semibold text-gray-700 flex items-center gap-2 cursor-pointer hover:text-[#0069f7] transition">
                 <input
                   type="checkbox"
-                  checked={isTrending}
-                  onChange={(e) => setIsTrending(e.target.checked)}
-                  className="rounded text-[#0069f7] focus:ring-[#0069f7]"
+                  checked={isBreaking}
+                  onChange={(e) => setIsBreaking(e.target.checked)}
+                  className="rounded text-[#0069f7] focus:ring-[#0069f7] w-4 h-4"
                 />
-                Mark as Trending
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  Mark as Breaking News (Top Bar Ticker)
+                </span>
               </label>
 
-              <label className="text-xs font-semibold text-gray-700 flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isFeatured}
-                  onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="rounded text-[#0069f7] focus:ring-[#0069f7]"
-                />
-                Mark as Featured
-              </label>
+              <div className="flex items-center justify-between pt-1">
+                <label className="text-xs font-semibold text-gray-700 flex items-center gap-2 cursor-pointer hover:text-[#0069f7] transition">
+                  <input
+                    type="checkbox"
+                    checked={isTrending}
+                    onChange={(e) => setIsTrending(e.target.checked)}
+                    className="rounded text-[#0069f7] focus:ring-[#0069f7] w-4 h-4"
+                  />
+                  Mark as Trending
+                </label>
+
+                <label className="text-xs font-semibold text-gray-700 flex items-center gap-2 cursor-pointer hover:text-[#0069f7] transition">
+                  <input
+                    type="checkbox"
+                    checked={isFeatured}
+                    onChange={(e) => setIsFeatured(e.target.checked)}
+                    className="rounded text-[#0069f7] focus:ring-[#0069f7] w-4 h-4"
+                  />
+                  Mark as Featured
+                </label>
+              </div>
             </div>
           </div>
         </div>

@@ -55,6 +55,7 @@ export async function PUT(
       status,
       isTrending,
       isFeatured,
+      isBreaking,
       pubDate,
       // SEO Fields
       metaTitle,
@@ -75,45 +76,51 @@ export async function PUT(
       return NextResponse.json({ error: 'Full content cannot be empty' }, { status: 400 });
     }
 
-    if (title) article.title = title.trim();
-    if (summary) article.summary = summary.trim();
-    if (fullText) article.fullText = fullText.trim();
+    const updateFields: any = {};
+    if (title) updateFields.title = title.trim();
+    if (summary) updateFields.summary = summary.trim();
+    if (fullText) updateFields.fullText = fullText.trim();
     if (category) {
-      article.category = category.trim();
-      article.categoryLabel = categoryLabel || category;
+      updateFields.category = category.trim();
+      updateFields.categoryLabel = categoryLabel || category;
     }
     if (subCategory !== undefined) {
-      article.subCategory = subCategory ? subCategory.trim() : '';
-      article.subCategoryLabel = subCategoryLabel || '';
+      updateFields.subCategory = subCategory ? subCategory.trim() : '';
+      updateFields.subCategoryLabel = subCategoryLabel || '';
     }
-    if (url !== undefined) article.url = url;
-    if (author) article.author = author.trim();
-    if (readTime) article.readTime = readTime.trim();
-    if (status) article.status = status;
-    if (isTrending !== undefined) article.isTrending = Boolean(isTrending);
-    if (isFeatured !== undefined) article.isFeatured = Boolean(isFeatured);
-    if (pubDate) article.pubDate = new Date(pubDate);
+    if (url !== undefined) updateFields.url = url;
+    if (author) updateFields.author = author.trim();
+    if (readTime) updateFields.readTime = readTime.trim();
+    if (status) updateFields.status = status;
+    if (isTrending !== undefined) updateFields.isTrending = Boolean(isTrending);
+    if (isFeatured !== undefined) updateFields.isFeatured = Boolean(isFeatured);
+    if (isBreaking !== undefined) updateFields.isBreaking = Boolean(isBreaking);
+    if (pubDate) updateFields.pubDate = new Date(pubDate);
 
     // Update SEO fields
-    if (metaTitle !== undefined) article.metaTitle = metaTitle.trim();
-    if (metaDescription !== undefined) article.metaDescription = metaDescription.trim();
-    if (metaKeywords !== undefined) article.metaKeywords = metaKeywords.trim();
-    if (canonicalUrl !== undefined) article.canonicalUrl = canonicalUrl.trim();
-    if (schemaMarkup !== undefined) article.schemaMarkup = schemaMarkup;
+    if (metaTitle !== undefined) updateFields.metaTitle = metaTitle.trim();
+    if (metaDescription !== undefined) updateFields.metaDescription = metaDescription.trim();
+    if (metaKeywords !== undefined) updateFields.metaKeywords = metaKeywords.trim();
+    if (canonicalUrl !== undefined) updateFields.canonicalUrl = canonicalUrl.trim();
+    if (schemaMarkup !== undefined) updateFields.schemaMarkup = schemaMarkup;
 
     // If new image supplied and not already local upload
     if (imageUrl && imageUrl !== article.imageUrl) {
-      article.originalImageUrl = imageUrl;
+      updateFields.originalImageUrl = imageUrl;
       try {
-        article.imageUrl = await downloadImageToUploads(imageUrl);
+        updateFields.imageUrl = await downloadImageToUploads(imageUrl);
       } catch {
-        article.imageUrl = imageUrl;
+        updateFields.imageUrl = imageUrl;
       }
     }
 
-    await article.save();
+    const updatedArticle = await News.findByIdAndUpdate(
+      id,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    );
 
-    return NextResponse.json({ success: true, article });
+    return NextResponse.json({ success: true, article: updatedArticle });
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }

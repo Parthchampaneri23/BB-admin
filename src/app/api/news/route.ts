@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
       status,
       isTrending,
       isFeatured,
+      isBreaking,
       pubDate,
       // SEO Fields
       metaTitle,
@@ -177,6 +178,7 @@ export async function POST(request: NextRequest) {
       status: status || 'published',
       isTrending: Boolean(isTrending),
       isFeatured: Boolean(isFeatured),
+      isBreaking: Boolean(isBreaking),
       pubDate: pubDate ? new Date(pubDate) : new Date(),
       // SEO Fields
       metaTitle: finalMetaTitle,
