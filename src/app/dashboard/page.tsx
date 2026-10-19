@@ -87,21 +87,11 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard/news/create"
-            className="inline-flex items-center gap-2 bg-[#0069f7] hover:bg-[#0058d0] text-white px-4 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition shadow-md"
+            className="inline-flex items-center gap-2 bg-[#0069f7] hover:bg-[#0058d0] text-white px-5 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition shadow-md"
           >
             <PlusCircle className="w-4 h-4" />
             Write Article
           </Link>
-
-          <button
-            onClick={handleSeedData}
-            disabled={seeding}
-            className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition cursor-pointer disabled:opacity-50"
-            title="Populate database with live data from BB-website"
-          >
-            <Database className="w-4 h-4 text-[#0069f7]" />
-            {seeding ? 'Syncing...' : 'Sync Live Data'}
-          </button>
         </div>
       </div>
 
