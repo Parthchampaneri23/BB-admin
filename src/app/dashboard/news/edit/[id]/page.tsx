@@ -70,6 +70,7 @@ export default function EditNewsPage({
   // State
   const [imageInputMode, setImageInputMode] = useState<'upload' | 'download'>('upload');
   const [remoteImageUrl, setRemoteImageUrl] = useState('');
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [downloadingImage, setDownloadingImage] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -216,6 +217,10 @@ export default function EditNewsPage({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // 1. Immediately create Object URL for real-time local preview
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+
     setUploadingImage(true);
     setError('');
 
@@ -223,6 +228,7 @@ export default function EditNewsPage({
       const formData = new FormData();
       formData.append('file', file);
 
+      // 2. Upload via API to get saved server URL
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -644,14 +650,14 @@ export default function EditNewsPage({
               </div>
             )}
 
-            {imageUrl && (
+            {(previewUrl || imageUrl) && (
               <div className="mt-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-[10px] font-mono text-gray-500 truncate mb-1.5">
-                  Saved: {imageUrl}
+                  {previewUrl ? 'Previewing New File' : `Saved: ${imageUrl}`}
                 </p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={imageUrl}
+                  src={previewUrl || imageUrl}
                   alt="Preview"
                   className="w-full h-36 object-cover rounded-md bg-white border border-gray-200"
                 />
