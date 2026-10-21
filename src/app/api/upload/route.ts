@@ -11,9 +11,9 @@ export async function POST(request: NextRequest) {
 
     const contentType = request.headers.get('content-type') || '';
 
-    // Determine public base URL from request host (e.g., https://admin.businessbullet.in)
+    // Determine public base URL from request host (always HTTPS for production domains)
     const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:4036';
-    const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+    const proto = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
     const baseUrl = `${proto}://${host}`;
 
     // If uploading via multipart/form-data file
