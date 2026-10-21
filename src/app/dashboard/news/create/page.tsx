@@ -180,24 +180,10 @@ export default function CreateNewsPage() {
         }
       }
 
-      // Automatically download remote image into local /uploads folder for seamless asset management
+      // Use the verified remote image URL directly (loads reliably anywhere without broken 404s)
       if (finalImg) {
         setRemoteImageUrl(finalImg);
-        try {
-          const imgRes = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageUrl: finalImg }),
-          });
-          const imgData = await imgRes.json();
-          if (imgRes.ok && imgData.url) {
-            setImageUrl(imgData.url);
-          } else {
-            setImageUrl(finalImg);
-          }
-        } catch {
-          setImageUrl(finalImg);
-        }
+        setImageUrl(finalImg);
       }
 
       // Auto generate SEO & Schema

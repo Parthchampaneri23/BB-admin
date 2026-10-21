@@ -11,6 +11,11 @@ export async function POST(request: NextRequest) {
 
     const contentType = request.headers.get('content-type') || '';
 
+    // Determine public base URL from request host (e.g., https://admin.businessbullet.in)
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:4036';
+    const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+    const baseUrl = `${proto}://${host}`;
+
     // If uploading via multipart/form-data file
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -22,9 +27,10 @@ export async function POST(request: NextRequest) {
 
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const localUrl = saveBufferToUploads(buffer, file.name);
+      const relativeUrl = saveBufferToUploads(buffer, file.name);
+      const fullUrl = `${baseUrl}${relativeUrl}`;
 
-      return NextResponse.json({ success: true, url: localUrl });
+      return NextResponse.json({ success: true, url: fullUrl, relativeUrl });
     }
 
     // If uploading via JSON with remote imageUrl to download
@@ -36,8 +42,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'imageUrl is required' }, { status: 400 });
       }
 
-      const localUrl = await downloadImageToUploads(imageUrl);
-      return NextResponse.json({ success: true, url: localUrl });
+      // If already a valid remote HTTPS image, return as is
+      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        return NextResponse.json({ success: true, url: imageUrl });
+      }
+
+      const localPath = await downloadImageToUploads(imageUrl);
+      const fullUrl = localPath.startsWith('http') ? localPath : `${baseUrl}${localPath}`;
+      return NextResponse.json({ success: true, url: fullUrl });
     }
 
     return NextResponse.json({ error: 'Unsupported media type' }, { status: 415 });
