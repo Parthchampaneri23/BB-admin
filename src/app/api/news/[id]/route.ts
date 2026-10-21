@@ -104,14 +104,10 @@ export async function PUT(
     if (canonicalUrl !== undefined) updateFields.canonicalUrl = canonicalUrl.trim();
     if (schemaMarkup !== undefined) updateFields.schemaMarkup = schemaMarkup;
 
-    // If new image supplied and not already local upload
+    // If new image supplied, keep it directly
     if (imageUrl && imageUrl !== article.imageUrl) {
       updateFields.originalImageUrl = imageUrl;
-      try {
-        updateFields.imageUrl = await downloadImageToUploads(imageUrl);
-      } catch {
-        updateFields.imageUrl = imageUrl;
-      }
+      updateFields.imageUrl = imageUrl;
     }
 
     const updatedArticle = await News.findByIdAndUpdate(

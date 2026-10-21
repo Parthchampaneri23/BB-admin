@@ -123,14 +123,9 @@ export async function POST(request: NextRequest) {
     const uniqueSuffix = Math.floor(100000 + Math.random() * 900000);
     const slug = `${baseSlug}-${uniqueSuffix}`;
 
-    // Ensure image is downloaded to /uploads if it's an external or website image
+    // Keep the verified image URL directly (whether HTTPS CDN or admin upload URL)
     let downloadedImageUrl = imageUrl;
     let originalImageUrl = imageUrl;
-    try {
-      downloadedImageUrl = await downloadImageToUploads(imageUrl);
-    } catch (err) {
-      console.warn('Image download warning:', err);
-    }
 
     // Auto generate fallback SEO fields if empty
     const finalMetaTitle = metaTitle && metaTitle.trim() ? metaTitle.trim() : `${title.trim()} | BusinessBulletin`;
