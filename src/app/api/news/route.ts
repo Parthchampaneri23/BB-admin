@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
 
     const {
       title,
+      customSlug,
       summary,
       fullText,
       category,
@@ -82,6 +83,13 @@ export async function POST(request: NextRequest) {
       subCategoryLabel,
       imageUrl,
       url,
+      sourceUrl,
+      tags,
+      imageTitle,
+      imageAlt,
+      imageCaption,
+      videoUrl,
+      videoCaption,
       author,
       readTime,
       status,
@@ -89,12 +97,15 @@ export async function POST(request: NextRequest) {
       isFeatured,
       isBreaking,
       pubDate,
+      socialLinks,
       // SEO Fields
       metaTitle,
       metaDescription,
       metaKeywords,
       canonicalUrl,
       schemaMarkup,
+      ogTitle,
+      ogImage,
     } = body;
 
     // Field Validations
@@ -114,23 +125,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Image is required' }, { status: 400 });
     }
 
-    // Auto generate clean slug
-    const baseSlug = title
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-    const uniqueSuffix = Math.floor(100000 + Math.random() * 900000);
-    const slug = `${baseSlug}-${uniqueSuffix}`;
+    // Dynamic Host Resolution for canonical and fallback URLs (works seamlessly across localhost & live production)
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:4036';
+    const proto = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+    const siteUrl = `${proto}://${host}`;
 
-    // Keep the verified image URL directly (whether HTTPS CDN or admin upload URL)
+    // Generate or format slug
+    let slug = '';
+    if (customSlug && customSlug.trim()) {
+      slug = customSlug
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    } else {
+      const baseSlug = title
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      const uniqueSuffix = Math.floor(100000 + Math.random() * 900000);
+      slug = `${baseSlug}-${uniqueSuffix}`;
+    }
+
+    // Keep verified image URL directly
     let downloadedImageUrl = imageUrl;
     let originalImageUrl = imageUrl;
 
     // Auto generate fallback SEO fields if empty
     const finalMetaTitle = metaTitle && metaTitle.trim() ? metaTitle.trim() : `${title.trim()} | BusinessBulletin`;
     const finalMetaDescription = metaDescription && metaDescription.trim() ? metaDescription.trim() : summary.trim().slice(0, 160);
-    const finalCanonicalUrl = canonicalUrl && canonicalUrl.trim() ? canonicalUrl.trim() : `https://businessbulletin.com/article/${slug}`;
+    const finalCanonicalUrl = canonicalUrl && canonicalUrl.trim() ? canonicalUrl.trim() : `${siteUrl}/article/${slug}`;
 
     let finalSchemaMarkup = schemaMarkup;
     if (!finalSchemaMarkup || !finalSchemaMarkup.trim()) {
@@ -146,7 +171,7 @@ export async function POST(request: NextRequest) {
           'publisher': {
             '@type': 'Organization',
             'name': 'BusinessBulletin',
-            'logo': { '@type': 'ImageObject', 'url': 'https://businessbulletin.com/updatedlogo.svg' },
+            'logo': { '@type': 'ImageObject', 'url': `${siteUrl}/updatedlogo.svg` },
           },
           'mainEntityOfPage': { '@type': 'WebPage', '@id': finalCanonicalUrl },
           'articleSection': categoryLabel || category,
@@ -159,6 +184,7 @@ export async function POST(request: NextRequest) {
     const newArticle = await News.create({
       title: title.trim(),
       slug,
+      customSlug: customSlug ? customSlug.trim() : '',
       summary: summary.trim(),
       fullText: fullText.trim(),
       category: category.trim(),
@@ -166,8 +192,15 @@ export async function POST(request: NextRequest) {
       subCategory: subCategory ? subCategory.trim() : '',
       subCategoryLabel: subCategoryLabel || '',
       url: url || '',
+      sourceUrl: sourceUrl || url || '',
+      tags: tags ? tags.trim() : '',
       imageUrl: downloadedImageUrl,
       originalImageUrl,
+      imageTitle: imageTitle ? imageTitle.trim() : '',
+      imageAlt: imageAlt ? imageAlt.trim() : '',
+      imageCaption: imageCaption ? imageCaption.trim() : '',
+      videoUrl: videoUrl ? videoUrl.trim() : '',
+      videoCaption: videoCaption ? videoCaption.trim() : '',
       author: author && author.trim() ? author.trim() : 'BusinessBulletin Desk',
       readTime: readTime && readTime.trim() ? readTime.trim() : '3 min read',
       status: status || 'published',
@@ -175,12 +208,24 @@ export async function POST(request: NextRequest) {
       isFeatured: Boolean(isFeatured),
       isBreaking: Boolean(isBreaking),
       pubDate: pubDate ? new Date(pubDate) : new Date(),
+      socialLinks: {
+        facebook: socialLinks?.facebook || '',
+        twitter: socialLinks?.twitter || '',
+        whatsapp: socialLinks?.whatsapp || '',
+        telegram: socialLinks?.telegram || '',
+        linkedin: socialLinks?.linkedin || '',
+        instagram: socialLinks?.instagram || '',
+        youtube: socialLinks?.youtube || '',
+        website: socialLinks?.website || '',
+      },
       // SEO Fields
       metaTitle: finalMetaTitle,
       metaDescription: finalMetaDescription,
       metaKeywords: metaKeywords ? metaKeywords.trim() : '',
       canonicalUrl: finalCanonicalUrl,
       schemaMarkup: finalSchemaMarkup,
+      ogTitle: ogTitle ? ogTitle.trim() : finalMetaTitle,
+      ogImage: ogImage ? ogImage.trim() : downloadedImageUrl,
     });
 
     return NextResponse.json({ success: true, article: newArticle }, { status: 201 });

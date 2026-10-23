@@ -42,6 +42,7 @@ export async function PUT(
 
     const {
       title,
+      customSlug,
       summary,
       fullText,
       category,
@@ -50,6 +51,13 @@ export async function PUT(
       subCategoryLabel,
       imageUrl,
       url,
+      sourceUrl,
+      tags,
+      imageTitle,
+      imageAlt,
+      imageCaption,
+      videoUrl,
+      videoCaption,
       author,
       readTime,
       status,
@@ -57,12 +65,15 @@ export async function PUT(
       isFeatured,
       isBreaking,
       pubDate,
+      socialLinks,
       // SEO Fields
       metaTitle,
       metaDescription,
       metaKeywords,
       canonicalUrl,
       schemaMarkup,
+      ogTitle,
+      ogImage,
     } = body;
 
     // Field Validations
@@ -78,6 +89,7 @@ export async function PUT(
 
     const updateFields: any = {};
     if (title) updateFields.title = title.trim();
+    if (customSlug !== undefined) updateFields.customSlug = customSlug.trim();
     if (summary) updateFields.summary = summary.trim();
     if (fullText) updateFields.fullText = fullText.trim();
     if (category) {
@@ -89,6 +101,13 @@ export async function PUT(
       updateFields.subCategoryLabel = subCategoryLabel || '';
     }
     if (url !== undefined) updateFields.url = url;
+    if (sourceUrl !== undefined) updateFields.sourceUrl = sourceUrl;
+    if (tags !== undefined) updateFields.tags = tags;
+    if (imageTitle !== undefined) updateFields.imageTitle = imageTitle.trim();
+    if (imageAlt !== undefined) updateFields.imageAlt = imageAlt.trim();
+    if (imageCaption !== undefined) updateFields.imageCaption = imageCaption.trim();
+    if (videoUrl !== undefined) updateFields.videoUrl = videoUrl.trim();
+    if (videoCaption !== undefined) updateFields.videoCaption = videoCaption.trim();
     if (author) updateFields.author = author.trim();
     if (readTime) updateFields.readTime = readTime.trim();
     if (status) updateFields.status = status;
@@ -97,12 +116,27 @@ export async function PUT(
     if (isBreaking !== undefined) updateFields.isBreaking = Boolean(isBreaking);
     if (pubDate) updateFields.pubDate = new Date(pubDate);
 
+    if (socialLinks) {
+      updateFields.socialLinks = {
+        facebook: socialLinks.facebook || '',
+        twitter: socialLinks.twitter || '',
+        whatsapp: socialLinks.whatsapp || '',
+        telegram: socialLinks.telegram || '',
+        linkedin: socialLinks.linkedin || '',
+        instagram: socialLinks.instagram || '',
+        youtube: socialLinks.youtube || '',
+        website: socialLinks.website || '',
+      };
+    }
+
     // Update SEO fields
     if (metaTitle !== undefined) updateFields.metaTitle = metaTitle.trim();
     if (metaDescription !== undefined) updateFields.metaDescription = metaDescription.trim();
     if (metaKeywords !== undefined) updateFields.metaKeywords = metaKeywords.trim();
     if (canonicalUrl !== undefined) updateFields.canonicalUrl = canonicalUrl.trim();
     if (schemaMarkup !== undefined) updateFields.schemaMarkup = schemaMarkup;
+    if (ogTitle !== undefined) updateFields.ogTitle = ogTitle.trim();
+    if (ogImage !== undefined) updateFields.ogImage = ogImage.trim();
 
     // If new image supplied, keep it directly
     if (imageUrl && imageUrl !== article.imageUrl) {
