@@ -38,6 +38,7 @@ import {
   Undo2,
   Redo2,
   HelpCircle,
+  X,
 } from 'lucide-react';
 
 interface SubCategory {
@@ -58,6 +59,8 @@ export default function CreateNewsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const richEditorRef = useRef<HTMLDivElement>(null);
+  const inlineImageInputRef = useRef<HTMLInputElement>(null);
+  const savedSelectionRef = useRef<Range | null>(null);
 
   // 1. Article Title & Metadata
   const [title, setTitle] = useState('');
@@ -93,6 +96,14 @@ export default function CreateNewsPage() {
   const [summary, setSummary] = useState('');
   const [fullText, setFullText] = useState('');
   const [isRawCodeMode, setIsRawCodeMode] = useState(false);
+
+  // In-content Body Image Modal
+  const [showInlineImgModal, setShowInlineImgModal] = useState(false);
+  const [inlineImgMode, setInlineImgMode] = useState<'upload' | 'url'>('upload');
+  const [inlineImgUrl, setInlineImgUrl] = useState('');
+  const [inlineImgCaption, setInlineImgCaption] = useState('');
+  const [inlineImgAlt, setInlineImgAlt] = useState('');
+  const [inlineImgUploading, setInlineImgUploading] = useState(false);
 
   // 5. Tags & Attribution
   const [tags, setTags] = useState('');
@@ -229,6 +240,87 @@ export default function CreateNewsPage() {
     if (richEditorRef.current) {
       setFullText(richEditorRef.current.innerHTML);
     }
+  };
+
+  const saveCurrentSelection = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      savedSelectionRef.current = sel.getRangeAt(0).cloneRange();
+    }
+  };
+
+  const openInlineImageModal = () => {
+    saveCurrentSelection();
+    setInlineImgUrl('');
+    setInlineImgCaption('');
+    setInlineImgAlt('');
+    setShowInlineImgModal(true);
+  };
+
+  const handleInlineFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setInlineImgUploading(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+      setInlineImgUrl(data.relativeUrl || data.url);
+      setSuccess('Image uploaded to /public/uploads/!');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setInlineImgUploading(false);
+    }
+  };
+
+  const insertInlineImageToEditor = () => {
+    if (!inlineImgUrl.trim()) {
+      setError('Please provide or upload an image first.');
+      return;
+    }
+
+    const safeUrl = inlineImgUrl.trim();
+    const safeCaption = inlineImgCaption.trim();
+    const safeAlt = (inlineImgAlt.trim() || safeCaption || title || 'Article image').replace(/"/g, '&quot;');
+
+    const figureHtml = safeCaption
+      ? `<figure class="my-6 block"><img src="${safeUrl}" alt="${safeAlt}" class="rounded-md max-w-full h-auto mx-auto block shadow-xs" /><figcaption class="text-xs text-gray-500 italic text-center mt-2">${safeCaption}</figcaption></figure><p><br/></p>`
+      : `<figure class="my-6 block"><img src="${safeUrl}" alt="${safeAlt}" class="rounded-md max-w-full h-auto mx-auto block shadow-xs" /></figure><p><br/></p>`;
+
+    if (isRawCodeMode) {
+      setFullText((prev) => prev + '\n' + figureHtml);
+    } else {
+      if (richEditorRef.current) {
+        richEditorRef.current.focus();
+
+        const sel = window.getSelection();
+        if (sel && savedSelectionRef.current) {
+          sel.removeAllRanges();
+          sel.addRange(savedSelectionRef.current);
+        }
+
+        document.execCommand('insertHTML', false, figureHtml);
+        setFullText(richEditorRef.current.innerHTML);
+      }
+    }
+
+    setShowInlineImgModal(false);
+    setInlineImgUrl('');
+    setInlineImgCaption('');
+    setInlineImgAlt('');
+    setSuccess('In-article image successfully inserted!');
   };
 
   // Auto Generate SEO Meta Tags & Schema Markup (StoryVilla format)
@@ -1560,6 +1652,19 @@ export default function CreateNewsPage() {
                   >
                     <LinkIcon className="w-4 h-4" />
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={openInlineImageModal}
+                    className="p-1.5 hover:bg-white rounded text-[#0069f7] font-semibold flex items-center gap-1 bg-blue-50/70 border border-blue-200/60 shadow-xs"
+                    title="Insert In-Article Image (Middle/Bottom)"
+                  >
+                    <ImageIcon className="w-4 h-4 text-[#0069f7]" />
+                    <span className="text-[11px] font-bold">Image</span>
+                  </button>
+
+                  <span className="w-px h-4 bg-gray-300 mx-1" />
+
                   <button
                     type="button"
                     onClick={() => execEditorCmd('undo')}
@@ -1581,17 +1686,31 @@ export default function CreateNewsPage() {
 
               {/* Editable Area */}
               {isRawCodeMode ? (
-                <textarea
-                  value={fullText}
-                  onChange={(e) => setFullText(e.target.value)}
-                  rows={14}
-                  placeholder="<p>Enter HTML or article content...</p>"
-                  className="w-full p-4 border border-gray-300 rounded-xl font-mono text-xs text-gray-900 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0069f7] focus:outline-none"
-                />
+                <div className="space-y-2">
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={openInlineImageModal}
+                      className="px-3 py-1 bg-blue-50 text-[#0069f7] border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:bg-blue-100 transition"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      <span>Insert Image into HTML</span>
+                    </button>
+                  </div>
+                  <textarea
+                    value={fullText}
+                    onChange={(e) => setFullText(e.target.value)}
+                    rows={14}
+                    placeholder="<p>Enter HTML or article content...</p>"
+                    className="w-full p-4 border border-gray-300 rounded-xl font-mono text-xs text-gray-900 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#0069f7] focus:outline-none"
+                  />
+                </div>
               ) : (
                 <div
                   ref={richEditorRef}
                   contentEditable
+                  onMouseUp={saveCurrentSelection}
+                  onKeyUp={saveCurrentSelection}
                   onInput={() => {
                     if (richEditorRef.current) {
                       setFullText(richEditorRef.current.innerHTML);
@@ -1604,6 +1723,160 @@ export default function CreateNewsPage() {
             </div>
           </div>
         </div>
+
+        {/* IN-ARTICLE IMAGE INSERTION MODAL */}
+        {showInlineImgModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0069f7] flex items-center justify-center font-bold">
+                    <ImageIcon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-[#01142e]">Insert Image into Article</h3>
+                    <p className="text-[11px] text-gray-400">Place an image anywhere in the middle or bottom of the story</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowInlineImgModal(false)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Upload vs URL Tabs */}
+              <div className="flex border border-gray-200 rounded-xl overflow-hidden text-xs">
+                <button
+                  type="button"
+                  onClick={() => setInlineImgMode('upload')}
+                  className={`flex-1 py-2 font-semibold transition ${
+                    inlineImgMode === 'upload'
+                      ? 'bg-[#01142e] text-white'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Upload File From Computer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInlineImgMode('url')}
+                  className={`flex-1 py-2 font-semibold transition ${
+                    inlineImgMode === 'url'
+                      ? 'bg-[#01142e] text-white'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Paste Image URL
+                </button>
+              </div>
+
+              {inlineImgMode === 'upload' ? (
+                <div className="space-y-3">
+                  <input
+                    type="file"
+                    ref={inlineImageInputRef}
+                    onChange={handleInlineFileUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <div
+                    onClick={() => inlineImageInputRef.current?.click()}
+                    className="border-2 border-dashed border-gray-300 hover:border-[#0069f7] rounded-xl p-5 text-center cursor-pointer transition bg-gray-50/50 hover:bg-blue-50/20"
+                  >
+                    {inlineImgUploading ? (
+                      <div className="flex flex-col items-center gap-2 text-xs text-gray-600">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#0069f7]" />
+                        <span>Uploading image to server...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1.5">
+                        <Upload className="w-6 h-6 text-[#0069f7]" />
+                        <span className="text-xs font-semibold text-gray-700">Click to choose image file</span>
+                        <span className="text-[10px] text-gray-400">JPG, PNG, WebP supported</span>
+                      </div>
+                    )}
+                  </div>
+                  {inlineImgUrl && (
+                    <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="truncate font-mono text-[11px]">{inlineImgUrl}</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Image URL / Path</label>
+                  <input
+                    type="text"
+                    value={inlineImgUrl}
+                    onChange={(e) => setInlineImgUrl(e.target.value)}
+                    placeholder="https://... or /uploads/..."
+                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-xs font-mono text-gray-900 focus:ring-2 focus:ring-[#0069f7] focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {/* Preview if image URL exists */}
+              {inlineImgUrl && (
+                <div className="relative aspect-video max-h-40 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={inlineImgUrl} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+
+              {/* Caption & Alt Inputs */}
+              <div className="space-y-2.5">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Caption / Source Credit <span className="text-gray-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={inlineImgCaption}
+                    onChange={(e) => setInlineImgCaption(e.target.value)}
+                    placeholder="e.g. Photo: Business Standard / Financial Chart Q3"
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 focus:ring-2 focus:ring-[#0069f7] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Alt Text <span className="text-gray-400 font-normal">(for SEO / Accessibility)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={inlineImgAlt}
+                    onChange={(e) => setInlineImgAlt(e.target.value)}
+                    placeholder="Brief description of this image"
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-xl text-xs text-gray-900 focus:ring-2 focus:ring-[#0069f7] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setShowInlineImgModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={insertInlineImageToEditor}
+                  disabled={!inlineImgUrl.trim() || inlineImgUploading}
+                  className="px-5 py-2 bg-[#0069f7] hover:bg-[#0053c7] text-white text-xs font-bold rounded-xl transition shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>Insert into Story</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* SECTION 5: TAGS & SOURCE ATTRIBUTION */}
         <div className="bg-white p-6 rounded-2xl border border-gray-200/90 shadow-xs space-y-5">
