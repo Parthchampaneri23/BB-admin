@@ -39,7 +39,10 @@ import {
   Redo2,
   HelpCircle,
   X,
+  AlignLeft,
 } from 'lucide-react';
+import { cleanArticleHtml } from '@/lib/sanitizeHtml';
+import ArticleSuccessModal from '@/components/ArticleSuccessModal';
 
 interface SubCategory {
   _id?: string;
@@ -136,6 +139,14 @@ export default function CreateNewsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [createdArticleData, setCreatedArticleData] = useState<{
+    id: string;
+    title: string;
+    category?: string;
+    categoryLabel?: string;
+    slug?: string;
+  } | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Auto-Fetch & Rewrite Article from Link
   const [fetchUrl, setFetchUrl] = useState('');
@@ -239,6 +250,45 @@ export default function CreateNewsPage() {
     document.execCommand(cmd, false, val);
     if (richEditorRef.current) {
       setFullText(richEditorRef.current.innerHTML);
+    }
+  };
+
+  const handleAutoAlignTypography = () => {
+    const raw = richEditorRef.current ? richEditorRef.current.innerHTML : fullText;
+    const sanitized = cleanArticleHtml(raw);
+    setFullText(sanitized);
+    if (richEditorRef.current) {
+      richEditorRef.current.innerHTML = sanitized;
+    }
+    setSuccess('Article typography auto-aligned & formatted cleanly!');
+  };
+
+  const handleEditorPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const pastedHtml = e.clipboardData.getData('text/html');
+    const pastedText = e.clipboardData.getData('text/plain');
+
+    let cleanFragment = '';
+    if (pastedHtml) {
+      cleanFragment = cleanArticleHtml(pastedHtml);
+    } else if (pastedText) {
+      // Split paragraphs by double newline and wrap in <p>
+      cleanFragment = pastedText
+        .split(/\r?\n\r?\n+/)
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .map((p) => `<p>${p.replace(/\r?\n/g, '<br/>')}</p>`)
+        .join('');
+      if (!cleanFragment) {
+        cleanFragment = `<p>${pastedText.trim()}</p>`;
+      }
+    }
+
+    if (cleanFragment) {
+      document.execCommand('insertHTML', false, cleanFragment);
+      if (richEditorRef.current) {
+        setFullText(richEditorRef.current.innerHTML);
+      }
     }
   };
 
@@ -766,10 +816,16 @@ export default function CreateNewsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create article');
 
-      setSuccess('Article published successfully!');
-      setTimeout(() => {
-        router.push('/dashboard/news');
-      }, 1000);
+      const savedItem = data.article || {};
+      setCreatedArticleData({
+        id: savedItem._id || savedItem.id || customSlug || title,
+        title: savedItem.title || title,
+        category: savedItem.category || category,
+        categoryLabel: savedItem.categoryLabel || categoryLabel || category,
+        slug: savedItem.slug || savedItem.customSlug || customSlug,
+      });
+      setShowSuccessModal(true);
+      setSuccess('News Successfully Uploaded!');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -1681,6 +1737,18 @@ export default function CreateNewsPage() {
                   >
                     <Redo2 className="w-4 h-4" />
                   </button>
+
+                  <span className="w-px h-4 bg-gray-300 mx-1" />
+
+                  <button
+                    type="button"
+                    onClick={handleAutoAlignTypography}
+                    className="p-1.5 hover:bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded flex items-center gap-1.5 transition font-semibold text-xs shadow-xs"
+                    title="Auto-Align Typography: Strips external fonts, foreign styles, fixes headings and aligns paragraphs"
+                  >
+                    <AlignLeft className="w-4 h-4 text-emerald-600" />
+                    <span>Auto-Align Typography</span>
+                  </button>
                 </div>
               )}
 
@@ -1709,6 +1777,7 @@ export default function CreateNewsPage() {
                 <div
                   ref={richEditorRef}
                   contentEditable
+                  onPaste={handleEditorPaste}
                   onMouseUp={saveCurrentSelection}
                   onKeyUp={saveCurrentSelection}
                   onInput={() => {
@@ -2391,6 +2460,14 @@ export default function CreateNewsPage() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Success Modal */}
+      <ArticleSuccessModal
+        isOpen={showSuccessModal}
+        mode="create"
+        article={createdArticleData}
+        onClose={() => setShowSuccessModal(false)}
+      />
     </div>
   );
 }
